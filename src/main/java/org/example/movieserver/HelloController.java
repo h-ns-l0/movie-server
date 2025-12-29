@@ -9,6 +9,6 @@ public class HelloController {
     @CrossOrigin(origins = "*")
     @GetMapping("/hello")
     public String hello() {
-        return "Hello World! 여기는 스프링부트 서버입니다!";
+        return "Hello World! 서버테스트중!";
     }
 }
