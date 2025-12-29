@@ -1,5 +1,5 @@
-# 1. 자바 17 환경을 기반으로 함
-FROM openjdk:17-jdk-slim
+# 1. 자바 17 환경을 기반으로 함->이클립스 테무린(Eclipse Temurin)수정
+FROM eclipse-temurin:17-jdk
 
 # 2. 작업 디렉토리 설정
 WORKDIR /app
