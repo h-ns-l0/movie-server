@@ -1,0 +1,51 @@
+name: Deploy to EC2 with Docker
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 체크아웃 (코드 가져오기)
+        uses: actions/checkout@v3
+
+      - name: JDK 17 설치
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: 그레이들 실행 권한 주기
+        run: chmod +x ./gradlew
+
+      - name: 스프링부트 빌드 (JAR 생성)
+        run: ./gradlew clean bootJar
+
+      - name: 도커 허브 로그인
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: 도커 이미지 빌드 및 푸시
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/movie-server:latest
+          # 깃허브 서버는 이미 인텔칩(AMD64)이라서 플랫폼 옵션 없어도 잘 됩니다!
+
+      - name: EC2에 접속해서 배포 실행
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ubuntu
+          key: ${{ secrets.KEY }}
+          script: |
+            sudo docker stop movie-server || true
+            sudo docker rm movie-server || true
+            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/movie-server:latest
+            sudo docker run -d -p 80:8080 --name movie-server ${{ secrets.DOCKER_USERNAME }}/movie-server:latest
+            sudo docker image prune -f
